@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { get } from "lodash";
 import {
   Button,
@@ -13,6 +13,8 @@ import {
 import { CloseOutlined, CheckOutlined } from "@ant-design/icons";
 import { useDatabaseQuery, useDatabaseSave } from "../lib/db";
 import textToQueriesAdapter from "../lib/textToQueriesAdapter";
+import useLocalStorage from "../lib/useLocalStorage";
+import { SAFE_DATA_NOTIFICATION_KEY } from "../lib/constants";
 
 const { Title } = Typography;
 
@@ -23,6 +25,14 @@ const styles = {
   },
 };
 
+function renderCode(sql) {
+  return (
+    <pre style={{ fontSize: ".85rem" }}>
+      <code>{sql.trim().replace(/\s\s+/g, " ").replace(/\n/g, " ")}</code>
+    </pre>
+  );
+}
+
 function NumberRenderer({ number }) {
   return <span style={{ color: "#256d98" }}>{number}</span>;
 }
@@ -32,7 +42,13 @@ const createSorter = (field) => (a, b) => get(a, field) - get(b, field);
 function getColumns(groupBy) {
   if (!groupBy) {
     return [
-      { title: "Stack", dataIndex: "stack", width: 6, ellipsis: true },
+      {
+        title: "Stack",
+        dataIndex: "stack",
+        width: 6,
+        ellipsis: true,
+        render: renderCode,
+      },
       {
         title: "Time",
         dataIndex: "time",
@@ -47,25 +63,23 @@ function getColumns(groupBy) {
         title: "SQL",
         dataIndex: "sql",
         width: 3,
-        render(sql) {
-          return (
-            <pre style={{ fontSize: ".85rem" }}>
-              <code>
-                {sql.trim().replace(/\s\s+/g, " ").replace(/\n/g, " ")}
-              </code>
-            </pre>
-          );
-        },
+        render: renderCode,
       },
     ];
   }
 
   return [
-    { title: "Stack", dataIndex: "stack", width: 6, ellipsis: true },
+    {
+      title: "Stack",
+      dataIndex: "stack",
+      width: 4,
+      ellipsis: true,
+      render: renderCode,
+    },
     {
       title: "SQL calls",
       dataIndex: "sqlList",
-      width: 6,
+      width: 1,
       sorter: createSorter("sqlList.length"),
       render(sqlList) {
         return <NumberRenderer number={sqlList.length} />;
@@ -74,7 +88,7 @@ function getColumns(groupBy) {
     {
       title: "Total time",
       dataIndex: "totalTime",
-      width: 6,
+      width: 1,
       sorter: createSorter("totalTime"),
       render(n) {
         return <NumberRenderer number={n.toFixed(8)} />;
@@ -83,7 +97,7 @@ function getColumns(groupBy) {
     {
       title: "Worst time",
       dataIndex: "maxTime",
-      width: 6,
+      width: 1,
       sorter: createSorter("maxTime"),
       render(n) {
         return <NumberRenderer number={n.toFixed(8)} />;
@@ -93,7 +107,7 @@ function getColumns(groupBy) {
       ellipsis: true,
       title: "Worst SQL",
       dataIndex: "maxSql",
-      width: 6,
+      width: 3,
       render(sql) {
         return (
           <pre style={{ fontSize: ".85rem" }}>
@@ -109,6 +123,14 @@ export default function Home() {
   const [groupBy, setGroupBy] = useState("");
   const [modalExportErrorMessage, setModalExportErrorMessage] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isFirstRender, setIsFirstRender] = useState(true);
+  const [showSafeDataNotification, setShowSafeDataNotification] =
+    useLocalStorage(SAFE_DATA_NOTIFICATION_KEY, true);
+
+  useEffect(() => {
+    setIsFirstRender(false);
+  }, []);
+
   const save = useDatabaseSave();
   const { data } = useDatabaseQuery({
     groupBy: groupBy,
@@ -134,8 +156,6 @@ export default function Home() {
       console.error(error);
     }
   }
-
-  console.log({ data });
 
   return (
     <>
@@ -170,7 +190,36 @@ export default function Home() {
           />
         )}
       </Modal>
-      <div style={{ margin: "auto", textAlign: "center", marginTop: "2rem" }}>
+
+      {!isFirstRender && showSafeDataNotification && (
+        <Alert
+          style={{
+            marginTop: 10,
+            maxWidth: 500,
+            marginLeft: "auto",
+            marginRight: "auto",
+          }}
+          message="Your data is safe!"
+          description={
+            <>
+              <p>
+                The tool Wp-GraphQL Analyser does not make any request and does
+                not access you backend. The data you provide to the application
+                is only stored in Local Storage at your browser.
+              </p>
+              <p>
+                Your data is not sent to anywhere! We are open source, so you
+                don't need to trust us: you can check the code.
+              </p>
+            </>
+          }
+          type="info"
+          afterClose={() => setShowSafeDataNotification(false)}
+          closable
+        />
+      )}
+
+      <div style={{ margin: "auto", textAlign: "center", marginTop: "1rem" }}>
         <div style={styles.buttonWrapper}>
           <Button type="primary" onClick={() => setIsModalVisible(true)}>
             Import new GraphQL result
