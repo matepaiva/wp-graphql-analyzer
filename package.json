@@ -1,25 +1,34 @@
 {
   "private": true,
   "scripts": {
-    "dev": "next",
+    "dev": "PORT=3001 next",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@ant-design/icons": "4.2.1",
+    "@ant-design/icons": "^4.2.1",
     "@next/bundle-analyzer": "^9.1.4",
     "antd": "4.3.0",
     "cross-env": "^7.0.2",
     "dayjs": "1.8.28",
     "esm": "^3.2.25",
+    "lodash": "^4.17.21",
     "next": "latest",
     "postcss-preset-env": "^6.7.0",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2"
+    "react-dom": "^17.0.2",
+    "uuid": "^8.3.2"
   },
   "browser": {
     "fs": false,
     "path": false
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^7.30.0",
+    "eslint-config-next": "^11.0.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.23.4"
+  }
 }
